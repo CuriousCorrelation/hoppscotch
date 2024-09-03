@@ -2,9 +2,33 @@
 # has a container with a Postgres instance running.
 # You can tweak around this file to match your instances
 
+# PROFILES EXPLANATION:
+#
+# We use Docker Compose profiles to manage different deployment scenarios and avoid port conflicts.
+#
+# These are the all the available profiles:
+# - current: All current (non-deprecated) services except the AIO service
+# - backend: The backend service and database
+# - app: The main Hoppscotch application
+# - admin: The self-host admin dashboard
+# - aio: The all-in-one service that combines backend, app, and admin
+# - deprecated: All deprecated services
+
+# USAGE:
+#
+# To run all current services (excluding AIO): docker-compose --profile current up
+# To run only the AIO service: docker-compose --profile aio up
+# To run specific components: docker-compose --profile backend --profile app up
+# To run deprecated services: docker-compose --profile deprecated up
+
+# NOTE: Do not run the 'aio' profile simultaneously with individual service profiles (backend, app, admin)
+# as they would conflict on ports. The 'current' profile and 'aio' profile are mutually exclusive.
+
 services:
-  # This service runs the backend app in the port 3170
+  # This service runs the backend app on port 3170
   hoppscotch-backend:
+    # Including in 'current' for all services and 'backend' for specific backend deployment
+    profiles: ["current", "backend"]
     container_name: hoppscotch-backend
     build:
       dockerfile: prod.Dockerfile
@@ -32,6 +56,8 @@ services:
   # NOTE: To do TLS or play around with how the app is hosted, you can look into the Caddyfile for
   #       the SH admin dashboard server at packages/hoppscotch-selfhost-web/Caddyfile
   hoppscotch-app:
+    # Including in 'current' for all services and 'app' for specific app deployment
+    profiles: ["current", "app"]
     container_name: hoppscotch-app
     build:
       dockerfile: prod.Dockerfile
@@ -49,6 +75,8 @@ services:
   # NOTE: To do TLS or play around with how the app is hosted, you can look into the Caddyfile for
   #       the SH admin dashboard server at packages/hoppscotch-sh-admin/Caddyfile
   hoppscotch-sh-admin:
+    # Including in 'current' for all services and 'admin' for specific admin dashboard deployment
+    profiles: ["current", "admin"]
     container_name: hoppscotch-sh-admin
     build:
       dockerfile: prod.Dockerfile
@@ -64,6 +92,8 @@ services:
 
   # The service that spins up all 3 services at once in one container
   hoppscotch-aio:
+    # Only included in the 'aio' profile to avoid conflicts with individual services
+    profiles: ["aio"]
     container_name: hoppscotch-aio
     restart: unless-stopped
     build:
@@ -85,6 +115,8 @@ services:
   # you are using an external postgres instance
   # This will be exposed at port 5432
   hoppscotch-db:
+    # Including in 'current' for all services, 'aio' for all-in-one, and 'backend' for specific backend deployment
+    profiles: ["current", "aio", "backend"]
     image: postgres:15
     ports:
       - "5432:5432"
@@ -105,8 +137,11 @@ services:
       timeout: 5s
       retries: 10
 
-  # All the services listed below are deprececated
+  # All the services listed below are deprecated
+  # These services are kept for backward compatibility but should not be used for new deployments
   hoppscotch-old-backend:
+    # Only included in the 'deprecated' profile
+    profiles: ["deprecated"]
     container_name: hoppscotch-old-backend
     build:
       dockerfile: packages/hoppscotch-backend/Dockerfile
@@ -130,6 +165,8 @@ services:
       - "3170:3000"
 
   hoppscotch-old-app:
+    # Only included in the 'deprecated' profile
+    profiles: ["deprecated"]
     container_name: hoppscotch-old-app
     build:
       dockerfile: packages/hoppscotch-selfhost-web/Dockerfile
@@ -142,6 +179,8 @@ services:
       - "3000:8080"
 
   hoppscotch-old-sh-admin:
+    # Only included in the 'deprecated' profile
+    profiles: ["deprecated"]
     container_name: hoppscotch-old-sh-admin
     build:
       dockerfile: packages/hoppscotch-sh-admin/Dockerfile
@@ -152,3 +191,26 @@ services:
       - hoppscotch-old-backend
     ports:
       - "3100:8080"
+
+# DEPLOYMENT SCENARIOS:
+# 1. Full current deployment (excluding AIO):
+#    docker-compose --profile current up
+#    This will start: hoppscotch-backend, hoppscotch-app, hoppscotch-sh-admin, and hoppscotch-db
+#
+# 2. All-in-One deployment:
+#    docker-compose --profile aio up
+#    This will start: hoppscotch-aio and hoppscotch-db
+#
+# 3. Backend-only deployment:
+#    docker-compose --profile backend up
+#    This will start: hoppscotch-backend and hoppscotch-db
+#
+# 4. Custom deployment (e.g., backend and app without admin):
+#    docker-compose --profile backend --profile app up
+#    This will start: hoppscotch-backend, hoppscotch-app, and hoppscotch-db
+#
+# 5. Deprecated services:
+#    docker-compose --profile deprecated up
+#    This will start all deprecated services (not recommended for new deployments)
+#
+# Remember: Do not mix 'aio' profile with individual service profiles to avoid port conflicts.
