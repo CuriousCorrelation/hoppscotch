@@ -137,6 +137,18 @@ services:
       timeout: 5s
       retries: 10
 
+  hoppscotch-migrate:
+    build:
+      dockerfile: prod.Dockerfile
+      context: .
+      target: backend
+    env_file:
+      - ./.env
+    depends_on:
+      hoppscotch-db:
+        condition: service_healthy
+    command: sh -c "pnpx prisma migrate deploy"
+
   # All the services listed below are deprecated
   # These services are kept for backward compatibility but should not be used for new deployments
   hoppscotch-old-backend:
