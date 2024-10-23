@@ -40,6 +40,8 @@ pub enum AppError {
     RegistrationInsertError,
     #[error("Failed to save registrations to store")]
     RegistrationSaveError,
+    #[error("Relay error: {0}")]
+    Relay(#[from] hoppscotch_relay::RelayError),
 }
 
 impl IntoResponse for AppError {
