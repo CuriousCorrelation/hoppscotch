@@ -26,16 +26,24 @@ import { ProxyKernelInterceptorService } from "@hoppscotch/common/platform/std/k
 import { ExtensionKernelInterceptorService } from "@hoppscotch/common/platform/std/kernel-interceptors/extension"
 import { BrowserKernelInterceptorService } from "@hoppscotch/common/platform/std/kernel-interceptors/browser"
 
-type Platform = 'web' | 'desktop'
+type Platform = "web" | "desktop"
 
 const createPlatformDef = <Web, Desktop>(web: Web, desktop: Desktop) => ({
   web,
   desktop,
-  get: (platform: Platform) => platform === 'web' ? web : desktop
+  get: (platform: Platform) => (platform === "web" ? web : desktop),
 })
 
-const webInterceptors = [BrowserKernelInterceptorService, ProxyKernelInterceptorService, AgentKernelInterceptorService, ExtensionKernelInterceptorService]
-const desktopInterceptors = [NativeKernelInterceptorService, ProxyKernelInterceptorService]
+const webInterceptors = [
+  BrowserKernelInterceptorService,
+  ProxyKernelInterceptorService,
+  AgentKernelInterceptorService,
+  ExtensionKernelInterceptorService,
+]
+const desktopInterceptors = [
+  NativeKernelInterceptorService,
+  ProxyKernelInterceptorService,
+]
 
 const platformDefs = {
   auth: createPlatformDef(webAuth, desktopAuth),
@@ -43,7 +51,7 @@ const platformDefs = {
   collections: createPlatformDef(webCollections, desktopCollections),
   settings: createPlatformDef(webSettings, desktopSettings),
   history: createPlatformDef(webHistory, desktopHistory),
-  interceptors: createPlatformDef(webInterceptors, desktopInterceptors)
+  interceptors: createPlatformDef(webInterceptors, desktopInterceptors),
 }
 
 const kernelMode = getKernelMode()
@@ -51,9 +59,9 @@ const headerPaddingLeft = ref("0px")
 const headerPaddingTop = ref("0px")
 
 const getInterceptors = (mode: Platform) =>
-  platformDefs.interceptors.get(mode).map(service => ({
+  platformDefs.interceptors.get(mode).map((service) => ({
     type: "service" as const,
-    service
+    service,
   }))
 
 async function initApp() {
